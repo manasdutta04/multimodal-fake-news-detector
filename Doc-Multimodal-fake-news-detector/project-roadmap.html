@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multimodal Fake News Detector — Build Roadmap</title>
+<style>
+  :root {
+    --bg: #14161b;
+    --panel: #1b1e25;
+    --panel-raised: #21252e;
+    --border: #2b2f3a;
+    --text: #eae8e0;
+    --muted: #9aa0ac;
+    --mark: #d8ff4a;
+    --mark-text: #14161b;
+    --teal: #4cd3c2;
+    --coral: #ff7a59;
+    --mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'JetBrains Mono', Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    margin: 0;
+    padding: 0;
+    line-height: 1.55;
+  }
+
+  .wrap { max-width: 880px; margin: 0 auto; padding: 40px 20px 80px; }
+
+  header.hero {
+    padding: 8px 0 36px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 36px;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin: 0 0 14px;
+  }
+
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(28px, 5vw, 40px);
+    line-height: 1.15;
+    margin: 0 0 16px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .hero p {
+    color: var(--muted);
+    font-size: 16px;
+    max-width: 60ch;
+    margin: 0 0 18px;
+  }
+
+  .mark {
+    background: linear-gradient(to bottom, transparent 60%, var(--mark) 60%);
+    padding: 0 2px;
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 18px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .legend span::before {
+    content: "";
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .legend .l-steps::before { background: var(--teal); }
+  .legend .l-concept::before { background: var(--mark); }
+  .legend .l-pitfall::before { background: var(--coral); }
+
+  .module {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 22px;
+    overflow: hidden;
+  }
+
+  .module > summary {
+    list-style: none;
+    cursor: pointer;
+    padding: 22px 24px;
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    position: relative;
+  }
+  .module > summary::-webkit-details-marker { display: none; }
+
+  .module > summary::after {
+    content: "+";
+    position: absolute;
+    right: 24px;
+    top: 22px;
+    font-family: var(--mono);
+    font-size: 20px;
+    color: var(--muted);
+    transition: transform 0.2s ease;
+  }
+  .module[open] > summary::after { content: "–"; }
+
+  .m-num {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--teal);
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding-top: 3px;
+  }
+
+  .m-title-block { flex: 1; padding-right: 28px; }
+
+  .m-title {
+    font-family: var(--mono);
+    font-size: 19px;
+    font-weight: 700;
+    margin: 0 0 6px;
+  }
+
+  .m-tagline { color: var(--muted); font-size: 14.5px; margin: 0; }
+
+  .badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+  .badge {
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .m-body { padding: 0 24px 28px; border-top: 1px solid var(--border); }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 24px 0 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+  .dot-steps { background: var(--teal); }
+  .dot-concept { background: var(--mark); }
+  .dot-pitfall { background: var(--coral); }
+
+  ol.steps { margin: 0; padding-left: 0; list-style: none; counter-reset: step; }
+  ol.steps li {
+    counter-increment: step;
+    padding: 10px 0 10px 34px;
+    position: relative;
+    border-bottom: 1px dashed var(--border);
+    font-size: 14.5px;
+  }
+  ol.steps li:last-child { border-bottom: none; }
+  ol.steps li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0; top: 9px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--teal);
+    width: 22px; height: 22px;
+    border: 1px solid var(--teal);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  ol.steps li b { color: var(--text); }
+  ol.steps li .why { color: var(--muted); display: block; margin-top: 3px; font-size: 13.5px; }
+
+  .concept-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 20px; }
+  @media (max-width: 640px) { .concept-grid { grid-template-columns: 1fr; } }
+  .concept {
+    background: var(--panel-raised);
+    border-left: 3px solid var(--mark);
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-size: 13.5px;
+  }
+  .concept b { display: block; margin-bottom: 3px; font-family: var(--mono); font-size: 13px; }
+  .concept span { color: var(--muted); }
+
+  .pitfall-list { margin: 0; padding: 0; list-style: none; }
+  .pitfall-list li {
+    padding: 9px 0 9px 24px;
+    position: relative;
+    font-size: 14px;
+    color: var(--text);
+    border-bottom: 1px dashed var(--border);
+  }
+  .pitfall-list li:last-child { border-bottom: none; }
+  .pitfall-list li::before {
+    content: "!";
+    position: absolute;
+    left: 0; top: 8px;
+    color: var(--coral);
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 13px;
+  }
+
+  .tools-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tool {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    background: var(--panel-raised);
+    border: 1px solid var(--border);
+    padding: 5px 10px;
+    border-radius: 5px;
+  }
+
+  .done-box {
+    margin-top: 24px;
+    background: var(--panel-raised);
+    border: 1px solid var(--teal);
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-size: 14px;
+  }
+  .done-box b {
+    font-family: var(--mono);
+    color: var(--teal);
+    display: block;
+    margin-bottom: 4px;
+    font-size: 12.5px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 13px;
+    font-family: var(--mono);
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero">
+    <p class="eyebrow">Build Roadmap — 5 Modules</p>
+    <h1>Multimodal Fake News Detector<br>with Explainability</h1>
+    <p>Every module below is written assuming you're building the underlying skill, not just the code. Each one lists the exact steps, the concepts worth actually understanding before moving on, and the mistakes beginners hit most. Tap a module to expand it.</p>
+    <div class="legend">
+      <span class="l-steps">Steps</span>
+      <span class="l-concept">Concepts to learn</span>
+      <span class="l-pitfall">Common pitfalls</span>
+    </div>
+  </header>
+
+  <!-- MODULE 1 -->
+  <details class="module" open>
+    <summary>
+      <span class="m-num">01 / 05</span>
+      <div class="m-title-block">
+        <p class="m-title">Data + Text-Only Baseline</p>
+        <p class="m-tagline">Get the data flowing and build your first working classifier — text only, no images yet.</p>
+        <div class="badges">
+          <span class="badge">~1–2 weeks</span>
+          <span class="badge">Python, pandas, scikit-learn, HuggingFace</span>
+        </div>
+      </div>
+    </summary>
+    <div class="m-body">
+
+      <div class="section-label"><span class="dot dot-steps"></span>Steps</div>
+      <ol class="steps">
+        <li><b>Set up your environment.</b> Install Python (3.10+), create a virtual environment, and use Google Colab or Kaggle Notebooks for free GPU access — you don't need a local GPU for this project.
+          <span class="why">Why: fine-tuning BERT later needs a GPU; local CPU training would take hours instead of minutes.</span>
+        </li>
+        <li><b>Download the Fakeddit dataset.</b> It comes with text, image links, and labels (2-way, 3-way, 6-way). Start with the 2-way (real/fake) labels.
+          <span class="why">Why: starting with binary classification keeps the problem simple before you add complexity.</span>
+        </li>
+        <li><b>Do exploratory data analysis (EDA).</b> Check class balance (`value_counts()`), text length distribution, and how many rows actually have a working image link.
+          <span class="why">Why: if one class has 5x more samples than the other, your model will cheat by always guessing that class unless you handle it.</span>
+        </li>
+        <li><b>Clean the text.</b> Lowercase it, strip URLs/HTML tags/extra whitespace. Don't over-clean — keep punctuation and emojis if present, they can be genuine signal for fake news style.
+          <span class="why">Why: fake news often has different "style" (excessive punctuation, clickbait phrasing) — cleaning too aggressively erases that signal.</span>
+        </li>
+        <li><b>Build a baseline model first: TF-IDF + Logistic Regression.</b> Use scikit-learn's `TfidfVectorizer` and `LogisticRegression`. This should take under an hour to build.
+          <span class="why">Why: always build the dumbest reasonable model first — it tells you if your data pipeline works, and gives you a number to beat.</span>
+        </li>
+        <li><b>Upgrade to a fine-tuned transformer (DistilBERT or BERT).</b> Use HuggingFace's `transformers` library — load a pretrained model, add a classification head, fine-tune on your labeled text.
+          <span class="why">Why: pretrained transformers already "understand" language; you're just teaching the last layer to recognize fake-vs-real patterns.</span>
+        </li>
+        <li><b>Split your data properly: train / validation / test.</b> Use `train_test_split` with stratification on the label column.
+          <span class="why">Why: stratifying keeps the same real/fake ratio in every split, so your validation accuracy isn't misleading.</span>
+        </li>
+        <li><b>Add your first explainability layer.</b> Use `shap` on the TF-IDF+LogReg model, or extract attention weights from the BERT model, to see which words pushed the prediction toward "fake."
+          <span class="why">Why: this is the whole point of the project — get in the habit of checking *why* early, not bolting it on at the end.</span>
+        </li>
+      </ol>
+
+      <div class="section-label"><span class="dot dot-concept"></span>Concepts worth understanding (not just using)</div>
+      <div class="concept-grid">
+        <div class="concept"><b>Tokenization</b><span>Splitting text into words/sub-words the model can process as numbers.</span></div>
+        <div class="concept"><b>TF-IDF</b><span>A score that weighs a word by how often it appears in a document vs. how common it is overall — rare-but-frequent words score high.</span></div>
+        <div class="concept"><b>Embeddings</b><span>Turning a word/sentence into a list of numbers (a vector) that captures its meaning — similar meanings end up as similar vectors.</span></div>
+        <div class="concept"><b>Transfer learning / fine-tuning</b><span>Taking a model already trained on huge text data and adjusting it slightly for your specific task, instead of training from scratch.</span></div>
+        <div class="concept"><b>Overfitting</b><span>When a model memorizes the training data instead of learning general patterns — shows up as high train accuracy, low validation accuracy.</span></div>
+        <div class="concept"><b>Class imbalance</b><span>When one label has far more examples than another, which can silently bias your model.</span></div>
+      </div>
+
+      <div class="section-label"><span class="dot dot-pitfall"></span>Common beginner pitfalls</div>
+      <ul class="pitfall-list">
+        <li>Splitting train/test <i>after</i> cleaning the whole dataset together — always split first, then process each split separately, to avoid data leakage.</li>
+        <li>Forgetting to move both the model and the data to the GPU (`.to('cuda')`) — training silently runs on CPU and takes forever.</li>
+        <li>Using a different tokenizer/preprocessing at inference time than the one used in training — predictions will be wrong or nonsensical.</li>
+        <li>Judging the model only on overall accuracy when classes are imbalanced — check precision/recall/F1 per class instead.</li>
+      </ul>
+
+      <div class="section-label" style="margin-bottom:8px;"><span class="dot dot-steps"></span>Tools you'll use</div>
+      <div class="tools-row">
+        <span class="tool">Python</span><span class="tool">pandas</span><span class="tool">numpy</span>
+        <span class="tool">scikit-learn</span><span class="tool">HuggingFace transformers</span>
+        <span class="tool">matplotlib</span><span class="tool">shap</span><span class="tool">Google Colab</span>
+      </div>
+
+      <div class="done-box">
+        <b>You're done with this module when...</b>
+        You have a fine-tuned text classifier with accuracy/F1 reported on a held-out test set, and you can print the top 5 words SHAP flagged as "most fake-indicating" for at least one example.
+      </div>
+    </div>
+  </details>
+
+  <!-- MODULE 2 -->
+  <details class="module">
+    <summary>
+      <span class="m-num">02 / 05</span>
+      <div class="m-title-block">
+        <p class="m-title">Image-Only Branch</p>
+        <p class="m-tagline">Build the visual half of the pipeline — a classifier that looks at the image alone, plus a heatmap explaining what it looked at.</p>
+        <div class="badges">
+          <span class="badge">~1–1.5 weeks</span>
+          <span class="badge">PyTorch, torchvision, Grad-CAM</span>
+        </div>
+      </div>
+    </summary>
+    <div class="m-body">
+
+      <div class="section-label"><span class="dot dot-steps"></span>Steps</div>
+      <ol class="steps">
+        <li><b>Download and inspect the images.</b> Fakeddit gives you image URLs/files — check for broken links, corrupted files, and very small/low-res images before training on them.
+          <span class="why">Why: a few corrupted files can crash a training loop hours in if you don't filter them first.</span>
+        </li>
+        <li><b>Preprocess images correctly.</b> Resize to the input size your chosen model expects (e.g. 224×224), and normalize using the <i>same</i> mean/std values the pretrained model was originally trained with.
+          <span class="why">Why: pretrained CNNs expect input in a specific numeric range — get this wrong and the model performs badly for no obvious reason.</span>
+        </li>
+        <li><b>Choose a pretrained backbone.</b> Start with ResNet50 (simpler, well-documented) via `torchvision.models`. Try a Vision Transformer (ViT) later for comparison if time allows.
+          <span class="why">Why: ResNet50 is the most beginner-friendly, forgiving architecture to fine-tune — good first choice before anything fancier.</span>
+        </li>
+        <li><b>Freeze most layers, fine-tune the last few.</b> Freeze the early convolutional layers (they detect generic edges/textures) and only train the last block + your new classification head.
+          <span class="why">Why: training the whole network from scratch on a small dataset causes severe overfitting; the early layers don't need to change.</span>
+        </li>
+        <li><b>Use light data augmentation.</b> Random crops, flips, slight color jitter — via `torchvision.transforms`.
+          <span class="why">Why: augmentation artificially grows your effective dataset size and makes the model less sensitive to irrelevant variations.</span>
+        </li>
+        <li><b>Train and evaluate</b> the same way as Module 1 — accuracy, precision/recall/F1, on a held-out test set.
+        </li>
+        <li><b>Add Grad-CAM explainability.</b> Use the `pytorch-grad-cam` library to generate a heatmap over the image showing which regions most influenced the "fake" or "real" decision.
+          <span class="why">Why: Grad-CAM is the image-side equivalent of SHAP for text — it's what lets you literally show "the model looked here."</span>
+        </li>
+      </ol>
+
+      <div class="section-label"><span class="dot dot-concept"></span>Concepts worth understanding</div>
+      <div class="concept-grid">
+        <div class="concept"><b>Convolution</b><span>A CNN scans small patches of the image with filters to detect edges, textures, then shapes, layer by layer.</span></div>
+        <div class="concept"><b>Pretrained backbone</b><span>A CNN/ViT already trained on millions of general images (ImageNet) — it already "knows" basic visual features.</span></div>
+        <div class="concept"><b>Freezing layers</b><span>Locking certain layers so their weights don't update during training — keeps what they already learned intact.</span></div>
+        <div class="concept"><b>Data augmentation</b><span>Randomly modifying training images (crop, flip, color) each epoch so the model sees more variety.</span></div>
+        <div class="concept"><b>Class Activation Map (Grad-CAM)</b><span>A heatmap generated from a CNN's internal gradients, showing which pixels most affected the output prediction.</span></div>
+      </div>
+
+      <div class="section-label"><span class="dot dot-pitfall"></span>Common beginner pitfalls</div>
+      <ul class="pitfall-list">
+        <li>Using ImageNet's normalization stats with a model that wasn't pretrained on ImageNet — always match the backbone's expected preprocessing.</li>
+        <li>Unfreezing and fine-tuning the entire network on a small dataset — this almost always overfits fast for a beginner project.</li>
+        <li>Not checking for broken/missing images before the training loop starts — filter these out during preprocessing, not mid-training.</li>
+        <li>Generating Grad-CAM from the wrong layer — it needs to target the last convolutional layer, not the final classification layer, to produce a meaningful spatial heatmap.</li>
+      </ul>
+
+      <div class="section-label" style="margin-bottom:8px;"><span class="dot dot-steps"></span>Tools you'll use</div>
+      <div class="tools-row">
+        <span class="tool">PyTorch</span><span class="tool">torchvision</span><span class="tool">PIL / Pillow</span>
+        <span class="tool">pytorch-grad-cam</span><span class="tool">matplotlib</span>
+      </div>
+
+      <div class="done-box">
+        <b>You're done with this module when...</b>
+        You have an image-only classifier with reported accuracy/F1, and you can display a Grad-CAM heatmap overlaid on at least one real image showing where the model "looked."
+      </div>
+    </div>
+  </details>
+
+  <!-- MODULE 3 -->
+  <details class="module">
+    <summary>
+      <span class="m-num">03 / 05</span>
+      <div class="m-title-block">
+        <p class="m-title">Fusion + Cross-Modal Explainability</p>
+        <p class="m-tagline">Combine text and image into one model, then build the explanation that makes this project stand out — <i>why</i> text and image agree or disagree.</p>
+        <div class="badges">
+          <span class="badge">~1.5–2 weeks</span>
+          <span class="badge">Core differentiator module</span>
+        </div>
+      </div>
+    </summary>
+    <div class="m-body">
+
+      <div class="section-label"><span class="dot dot-steps"></span>Steps</div>
+      <ol class="steps">
+        <li><b>Extract embeddings from both branches.</b> Take the second-to-last layer output from your Module 1 text model and Module 2 image model — this gives you a fixed-length vector representing each.
+          <span class="why">Why: you don't need the final classification layer, just the "understanding" the model built before it — that's what gets fused.</span>
+        </li>
+        <li><b>Build late fusion first.</b> Concatenate the text embedding and image embedding into one vector, feed it into a small new classifier (a couple of dense layers).
+          <span class="why">Why: this is the simplest fusion approach to get working end-to-end before adding complexity — get a baseline multimodal number first.</span>
+        </li>
+        <li><b>Compare against your unimodal baselines.</b> Multimodal accuracy should beat both text-only and image-only — if it doesn't, something's wrong with the fusion, not the concept.
+        </li>
+        <li><b>Upgrade to cross-attention fusion (optional but recommended).</b> Let the text embedding "attend to" the image embedding and vice versa, so the model learns which parts of each modality relate to each other.
+          <span class="why">Why: this produces attention weights you can reuse directly as explainability output — a natural upgrade path, not just extra complexity.</span>
+        </li>
+        <li><b>Compute a text-image agreement score.</b> Use cosine similarity between the two embeddings (or the cross-attention weights) as a simple "how much do these two modalities agree" signal.
+        </li>
+        <li><b>Build the natural-language explainer.</b> Write a small rule-based function: if the agreement score is low and the image branch's confidence dominates, output something like <i>"Flagged mainly due to a mismatch between the claim and the image."</i> If text dominates, phrase it around wording/style instead.
+          <span class="why">Why: this is your project's unique contribution — most systems explain each modality separately and never explain the fusion decision itself.</span>
+        </li>
+      </ol>
+
+      <div class="section-label"><span class="dot dot-concept"></span>Concepts worth understanding</div>
+      <div class="concept-grid">
+        <div class="concept"><b>Embedding space</b><span>The numeric "meaning space" where similar things (in text or images) end up close together as vectors.</span></div>
+        <div class="concept"><b>Cosine similarity</b><span>A measure of how aligned two vectors are (1 = identical direction, 0 = unrelated, -1 = opposite) — used to compare text and image embeddings.</span></div>
+        <div class="concept"><b>Early vs. late fusion</b><span>Early fusion combines raw features before much processing; late fusion combines each modality's already-processed output. Late fusion is easier to debug.</span></div>
+        <div class="concept"><b>Attention mechanism</b><span>A way for a model to learn "how much weight" to give different pieces of input when making a decision — here, how much to trust text vs. image.</span></div>
+      </div>
+
+      <div class="section-label"><span class="dot dot-pitfall"></span>Common beginner pitfalls</div>
+      <ul class="pitfall-list">
+        <li>Training the fusion head while also letting the text/image branches keep updating — freeze them first, get fusion working, then consider fine-tuning end-to-end.</li>
+        <li>Text and image embedding dimensions not matching when concatenating — check `.shape` before feeding into the fusion layer.</li>
+        <li>Overfitting the fusion head on a small number of samples — it's a small model, but still needs enough data and regularization (dropout).</li>
+        <li>Treating a high agreement/disagreement score as proof of truth by itself — it's one signal, not a verdict; keep it paired with the classifier's actual prediction.</li>
+      </ul>
+
+      <div class="section-label" style="margin-bottom:8px;"><span class="dot dot-steps"></span>Tools you'll use</div>
+      <div class="tools-row">
+        <span class="tool">PyTorch</span><span class="tool">numpy</span><span class="tool">scikit-learn (cosine_similarity)</span>
+      </div>
+
+      <div class="done-box">
+        <b>You're done with this module when...</b>
+        Your multimodal model beats both unimodal baselines on the test set, and for at least a few examples you can generate a one-line explanation naming which modality drove the decision.
+      </div>
+    </div>
+  </details>
+
+  <!-- MODULE 4 -->
+  <details class="module">
+    <summary>
+      <span class="m-num">04 / 05</span>
+      <div class="m-title-block">
+        <p class="m-title">Evaluation: Faithfulness + Robustness</p>
+        <p class="m-tagline">Prove your explanations are actually trustworthy — not just pretty pictures. This is the part almost nobody else in this space does properly.</p>
+        <div class="badges">
+          <span class="badge">~1 week</span>
+          <span class="badge">Your second differentiator</span>
+        </div>
+      </div>
+    </summary>
+    <div class="m-body">
+
+      <div class="section-label"><span class="dot dot-steps"></span>Steps</div>
+      <ol class="steps">
+        <li><b>Run a faithfulness (deletion) test on text.</b> Take the top-k SHAP words for a prediction, mask/remove them, and re-run the model. If confidence drops sharply, the explanation is faithful.
+          <span class="why">Why: a heatmap that looks convincing but doesn't actually affect the model's decision is misleading, not explainable.</span>
+        </li>
+        <li><b>Run the same test on images.</b> Blank out or blur the top Grad-CAM region, re-run the model, check the confidence drop.
+        </li>
+        <li><b>Plot deletion curves.</b> Remove words/regions in decreasing order of importance and plot how confidence drops as a curve — a steep early drop = good explanation.
+        </li>
+        <li><b>Test missing-modality robustness.</b> Run your fusion model with only text (blank/zero image embedding) and only image (blank text embedding). Record how much accuracy drops in each case.
+          <span class="why">Why: real-world posts are often text-only or image-only — this tells you (and anyone reviewing your project) how the model behaves outside ideal conditions.</span>
+        </li>
+        <li><b>(Optional) Compare against a large vision-language model.</b> Send the same text+image pairs to an existing VLM (e.g. via an API) and compare its accuracy and explanation style to yours.
+          <span class="why">Why: this shows where your lightweight, explainable approach stands relative to a heavyweight system, without you having to train one.</span>
+        </li>
+        <li><b>Build one summary comparison table</b> covering: text-only, image-only, late fusion, cross-attention fusion (and VLM if included) — accuracy, F1, and faithfulness score side by side.
+        </li>
+      </ol>
+
+      <div class="section-label"><span class="dot dot-concept"></span>Concepts worth understanding</div>
+      <div class="concept-grid">
+        <div class="concept"><b>Faithfulness</b><span>Whether an explanation actually reflects what drove the model's decision, as opposed to just looking plausible to a human.</span></div>
+        <div class="concept"><b>Deletion/insertion metric</b><span>Remove (or add back) the "important" parts one at a time and track how prediction confidence changes — a quantitative faithfulness check.</span></div>
+        <div class="concept"><b>Ablation study</b><span>Systematically removing or disabling one part of a system (e.g. one modality) to measure its individual contribution.</span></div>
+        <div class="concept"><b>Robustness</b><span>How well a model holds up under conditions it wasn't specifically optimized for, like missing input.</span></div>
+      </div>
+
+      <div class="section-label"><span class="dot dot-pitfall"></span>Common beginner pitfalls</div>
+      <ul class="pitfall-list">
+        <li>Only reporting accuracy and skipping faithfulness entirely because it feels optional — it's the part that makes this project different from a generic fusion model.</li>
+        <li>Testing missing-modality behavior by literally removing input shape rather than zeroing/masking it consistently with how the model was trained to expect input.</li>
+        <li>Eyeballing "the numbers look different" instead of reporting the actual delta — always put real numbers in the comparison table, not impressions.</li>
+        <li>Forgetting to test faithfulness on both correct <i>and</i> incorrect predictions — faithfulness matters especially when the model is wrong.</li>
+      </ul>
+
+      <div class="section-label" style="margin-bottom:8px;"><span class="dot dot-steps"></span>Tools you'll use</div>
+      <div class="tools-row">
+        <span class="tool">pandas</span><span class="tool">matplotlib</span><span class="tool">shap</span>
+        <span class="tool">pytorch-grad-cam</span><span class="tool">VLM API (optional)</span>
+      </div>
+
+      <div class="done-box">
+        <b>You're done with this module when...</b>
+        You have a deletion-curve plot, a missing-modality accuracy table, and one combined comparison table across all model variants you built.
+      </div>
+    </div>
+  </details>
+
+  <!-- MODULE 5 -->
+  <details class="module">
+    <summary>
+      <span class="m-num">05 / 05</span>
+      <div class="m-title-block">
+        <p class="m-title">Demo + Writeup</p>
+        <p class="m-tagline">Package everything into something a stranger — or an interviewer — can actually open, use, and understand in five minutes.</p>
+        <div class="badges">
+          <span class="badge">~1 week</span>
+          <span class="badge">Streamlit, README</span>
+        </div>
+      </div>
+    </summary>
+    <div class="m-body">
+
+      <div class="section-label"><span class="dot dot-steps"></span>Steps</div>
+      <ol class="steps">
+        <li><b>Save your trained models properly.</b> Use `torch.save(model.state_dict(), ...)` for each branch (text, image, fusion) so they can be reloaded without retraining.
+          <span class="why">Why: retraining every time you restart your notebook wastes hours — checkpoint early and often.</span>
+        </li>
+        <li><b>Build a simple inference pipeline function.</b> One function that takes raw text + an image file, runs it through preprocessing → both branches → fusion → explanation, and returns everything needed for display.
+        </li>
+        <li><b>Build the Streamlit app.</b> A text box, an image upload widget, a "Predict" button, and an output area showing: label, confidence, highlighted text (color-coded by SHAP importance), the image with Grad-CAM overlay, and the agreement explanation sentence.
+        </li>
+        <li><b>Handle missing input gracefully.</b> If the user only provides text or only an image, run the appropriate unimodal branch instead of crashing.
+        </li>
+        <li><b>Add a loading state.</b> Inference isn't instant — show a spinner/status message so the app doesn't look frozen.
+        </li>
+        <li><b>Write the README/report.</b> Cover: problem statement, architecture diagram, dataset used, results table (from Module 4), example predictions with explanations, and honest limitations (e.g. "trained on Reddit-style posts, may not generalize to other formats").
+          <span class="why">Why: the writeup is what makes this legible to someone who didn't build it — for a portfolio or interview, it matters as much as the code.</span>
+        </li>
+        <li><b>(Optional) Deploy.</b> Streamlit Community Cloud is free and simple if you want a shareable link rather than a local-only demo.
+        </li>
+      </ol>
+
+      <div class="section-label"><span class="dot dot-concept"></span>Concepts worth understanding</div>
+      <div class="concept-grid">
+        <div class="concept"><b>Model checkpointing</b><span>Saving a trained model's weights to disk so you can reload and reuse it without retraining.</span></div>
+        <div class="concept"><b>Inference pipeline</b><span>The full sequence of steps from raw input to final output, run at prediction time rather than training time.</span></div>
+        <div class="concept"><b>Model serving</b><span>Making a trained model available to receive input and return predictions through an interface (here, a simple web app).</span></div>
+      </div>
+
+      <div class="section-label"><span class="dot dot-pitfall"></span>Common beginner pitfalls</div>
+      <ul class="pitfall-list">
+        <li>Loading a multi-gigabyte model fresh on every single prediction instead of loading it once at app startup — makes the demo painfully slow.</li>
+        <li>Preprocessing input differently in the app than during training (e.g. different image resize or text cleaning) — silently breaks predictions.</li>
+        <li>Skipping the "what this can't do" section in the writeup — naming limitations honestly is what makes a project report credible.</li>
+        <li>Showing raw model output (like class index `0`/`1`) instead of a labeled, human-readable result.</li>
+      </ul>
+
+      <div class="section-label" style="margin-bottom:8px;"><span class="dot dot-steps"></span>Tools you'll use</div>
+      <div class="tools-row">
+        <span class="tool">Streamlit</span><span class="tool">FastAPI (optional)</span><span class="tool">Markdown</span>
+      </div>
+
+      <div class="done-box">
+        <b>You're done with this module when...</b>
+        Someone else can open your app, paste a headline and upload a photo, and get back a prediction with a heatmap and a plain-English explanation — without you needing to explain anything.
+      </div>
+    </div>
+  </details>
+
+  <footer>
+    5 modules · ~6–7.5 weeks total · each module builds directly on the previous one
+  </footer>
+
+</div>
+</body>
+</html>
