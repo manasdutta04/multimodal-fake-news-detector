@@ -17,19 +17,21 @@
 - Prefer a clear package layout as code appears, e.g.:
 
 ```text
-src/   or   multimodal_fake_news/
-  data/
-  models/text/
-  models/image/
-  models/fusion/
-  explain/
-  inference/
-app/          # Streamlit
-notebooks/    # EDA / experiments only
-artifacts/    # metrics, plots (consider gitignore for large weights)
+app/                 # Streamlit demo + inference
+  streamlit_app.py
+  inference_pipeline.py
+  models.py
+  preprocessing.py
+notebooks/           # Colab modules 01–04
+artifacts/           # metrics CSVs + RESULTS.md (git-safe)
+docs/                # PRD + roadmap
+scripts/             # check_checkpoints.py, run_demo.ps1
+checkpoints/         # local/Drive weights (gitignored)
+dataset/             # Fakeddit TSVs + image_cache (gitignored)
 ```
 
 - Large weights/checkpoints: gitignore by default; document how to download/reproduce
+- Demo loads checkpoints from `CHECKPOINTS_DIR` (env or sidebar) — never hard-code machine paths
 
 ## ML hygiene
 

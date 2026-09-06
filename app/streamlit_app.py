@@ -6,11 +6,11 @@ Run from repo root:
 """
 from __future__ import annotations
 
+import html
 import os
 import sys
 from pathlib import Path
 
-# Ensure repo root is on sys.path when launched via `streamlit run app/...`
 _ROOT = Path(__file__).resolve().parents[1]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
@@ -23,7 +23,7 @@ from app.inference_pipeline import FakeNewsPipeline, default_checkpoints_dir
 
 st.set_page_config(
     page_title="Multimodal Fake News Detector",
-    page_icon="📰",
+    page_icon=":newspaper:",
     layout="wide",
 )
 
@@ -48,15 +48,18 @@ with st.sidebar:
     )
     st.markdown(
         """
-**Expected layout**
+**Expected layout** (same as Drive)
 ```
-checkpoints/
+dataset/checkpoints/
   module01_distilbert/
   module02_resnet50/model.pt
   module03_fusion/fusion.pt
 ```
 """
     )
+    if st.button("Clear model cache"):
+        st.cache_resource.clear()
+        st.success("Cache cleared — next Predict will reload weights.")
     st.markdown(
         "[GitHub](https://github.com/manasdutta04/multimodal-fake-news-detector)"
     )
@@ -65,6 +68,24 @@ checkpoints/
 @st.cache_resource(show_spinner="Loading models…")
 def load_pipeline(checkpoints_dir: str) -> FakeNewsPipeline:
     return FakeNewsPipeline(checkpoints_dir)
+
+
+def render_highlighted_text(text: str, highlights: list) -> str:
+    """Bold/color the top occlusion tokens inside the cleaned text."""
+    if not text:
+        return ""
+    scores = {t.lower(): s for t, s in highlights}
+    parts = []
+    for tok in text.split():
+        key = tok.lower().strip(".,!?;:\"'()[]")
+        if key in scores and scores[key] > 0:
+            parts.append(
+                f'<mark style="background:#ff7a5933;padding:0 2px;border-radius:2px">'
+                f"{html.escape(tok)}</mark>"
+            )
+        else:
+            parts.append(html.escape(tok))
+    return " ".join(parts)
 
 
 col_in, col_out = st.columns([1, 1])
@@ -76,7 +97,9 @@ with col_in:
         height=120,
         placeholder="Paste a news-style headline or Reddit title…",
     )
-    uploaded = st.file_uploader("Image (optional)", type=["jpg", "jpeg", "png", "webp"])
+    uploaded = st.file_uploader(
+        "Image (optional)", type=["jpg", "jpeg", "png", "webp"]
+    )
     run = st.button("Predict", type="primary", use_container_width=True)
 
 with col_out:
@@ -103,7 +126,9 @@ if run:
 
     with st.spinner("Running inference…"):
         try:
-            result = pipe.predict(text=text or None, image=image, fusion=fusion_choice)
+            result = pipe.predict(
+                text=text or None, image=image, fusion=fusion_choice
+            )
         except Exception as e:
             st.error(f"Inference failed: {e}")
             st.stop()
@@ -119,22 +144,38 @@ if run:
         st.info(result.explanation)
 
         st.write("**Class probabilities**")
-        st.json(result.probs)
+        st.caption(f"fake  {result.probs['fake']:.1%}")
+        st.progress(min(max(float(result.probs["fake"]), 0.0), 1.0))
+        st.caption(f"real  {result.probs['real']:.1%}")
+        st.progress(min(max(float(result.probs["real"]), 0.0), 1.0))
 
         if result.unimodal:
-            st.write("**Unimodal branch probs**")
-            st.json(result.unimodal)
+            with st.expander("Unimodal branch probabilities"):
+                st.json(result.unimodal)
 
-        if result.text_highlights:
-            st.write("**Influential tokens** (occlusion drop on DistilBERT)")
-            for tok, score in result.text_highlights:
-                st.write(f"- `{tok}` — Δconf={score:+.4f}")
+        if text.strip() and result.text_highlights:
+            st.write("**Text with influential tokens highlighted**")
+            from app.preprocessing import clean_text
+
+            st.markdown(
+                render_highlighted_text(clean_text(text), result.text_highlights),
+                unsafe_allow_html=True,
+            )
+            with st.expander("Token occlusion scores"):
+                for tok, score in result.text_highlights:
+                    st.write(f"- `{tok}` — Δconf={score:+.4f}")
 
         if result.gradcam_overlay is not None:
-            st.write("**Grad-CAM** (image regions influencing the vision branch)")
-            st.image(result.gradcam_overlay, caption="Grad-CAM overlay", use_container_width=True)
-
-        if image is not None:
+            st.write("**Grad-CAM** (regions influencing the vision branch)")
+            left, right = st.columns(2)
+            if image is not None:
+                left.image(image, caption="Original", use_container_width=True)
+            right.image(
+                result.gradcam_overlay,
+                caption="Grad-CAM overlay",
+                use_container_width=True,
+            )
+        elif image is not None:
             st.write("**Original image**")
             st.image(image, use_container_width=True)
 
@@ -144,7 +185,9 @@ st.markdown(
 ### Limitations
 - Prototype trained on **Fakeddit** (Reddit-style posts), not general web news.
 - Does **not** verify claims against a live knowledge base.
-- Missing-modality mode uses the matching unimodal branch (or zeroed fusion embeddings in training eval).
+- Missing-modality mode uses the matching unimodal branch.
 - Explanations are model attributions, not proof of truth.
+
+See [artifacts/RESULTS.md](artifacts/RESULTS.md) for metrics from Modules 01–04.
 """
 )

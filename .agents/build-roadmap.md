@@ -1,54 +1,55 @@
 # Build roadmap
 
-Build in order. Each module depends on the previous. Total ~6–7.5 weeks if following the human roadmap.
+Status: **Modules 01–05 complete** (training notebooks + evaluation + Streamlit demo).
 
-## Module 01 — Data + text-only baseline (~1–2 weeks)
+Build in order. Each module depends on the previous.
 
-- Env: Python 3.10+, venv; Colab/Kaggle GPU when fine-tuning transformers
-- EDA on Fakeddit multimodal TSVs
-- Baseline: TF-IDF + Logistic Regression
-- Upgrade: DistilBERT/BERT fine-tune
-- First explainability: SHAP (baseline) and/or attention weights (transformer)
+## Module 01 — Data + text-only baseline — DONE
 
-**Done when:** held-out accuracy/F1 reported, and top-5 SHAP “fake-indicating” words printable for ≥1 example.
+- Notebook: `notebooks/module01_text_baseline.ipynb`
+- Metrics: `artifacts/module01_metrics.csv`
+- Checkpoint (Drive): `checkpoints/module01_distilbert/`
 
-## Module 02 — Image-only branch (~1–1.5 weeks)
+**Done when:** held-out accuracy/F1 reported, and top-5 SHAP words printable for ≥1 example.
 
-- Download/filter images; correct resize + normalize
-- ResNet50 fine-tune (freeze early layers)
-- Light augmentation
-- Grad-CAM heatmaps
+## Module 02 — Image-only branch — DONE
+
+- Notebook: `notebooks/module02_image_baseline.ipynb`
+- Metrics: `artifacts/module02_metrics.csv`
+- Checkpoint (Drive): `checkpoints/module02_resnet50/model.pt`
 
 **Done when:** image-only metrics reported + Grad-CAM overlay on ≥1 image.
 
-## Module 03 — Fusion + cross-modal explainability (~1.5–2 weeks)
+## Module 03 — Fusion + cross-modal explainability — DONE
 
-- Extract embeddings from both branches
-- Late fusion MLP first; compare to unimodal
-- Optional: cross-attention fusion
-- Text–image agreement score + short rule-based NL explanation
+- Notebook: `notebooks/module03_fusion.ipynb`
+- Metrics: `artifacts/module03_metrics.csv`
+- Checkpoint (Drive): `checkpoints/module03_fusion/fusion.pt`
 
-**Done when:** multimodal beats both unimodal baselines; one-line modality-driven explanation for sample cases.
+**Done when:** multimodal beats both unimodal baselines; one-line modality-driven explanation.
 
-## Module 04 — Faithfulness + robustness (~1 week)
+## Module 04 — Faithfulness + robustness — DONE
 
-- Deletion tests for text (mask top SHAP tokens) and image (blur/blank Grad-CAM region)
-- Deletion curves
-- Missing-modality ablation (zero/mask image or text embedding)
-- Comparison table: text / image / late fusion / (cross-attn) / optional VLM
+- Notebook: `notebooks/module04_evaluation.ipynb`
+- Metrics: `artifacts/module04_metrics.csv`
+- Summary: `artifacts/RESULTS.md`
 
-**Done when:** deletion-curve plot + missing-modality table + combined comparison table exist.
+**Done when:** deletion-curve plots, missing-modality table, comparison table exist.
 
-## Module 05 — Demo + writeup (~1 week)
+## Module 05 — Demo + writeup — DONE
 
-- Checkpoint all branches
-- Single inference pipeline function
-- Streamlit: text + image upload → label, confidence, text highlights, Grad-CAM, agreement sentence
-- Graceful missing input; loading spinner
-- README: problem, architecture, data, results, limitations
+- App: `app/streamlit_app.py` + `app/inference_pipeline.py`
+- Writeup: `README.md`
+- Helpers: `scripts/check_checkpoints.py`, `scripts/run_demo.ps1`
 
-**Done when:** a stranger can run the demo without hand-holding.
+**Done when:** a stranger can open the app, paste a headline / upload a photo, and get prediction + explanation without hand-holding.
+
+```powershell
+# Teammate layout: dataset\checkpoints\
+python scripts/check_checkpoints.py
+streamlit run app/streamlit_app.py
+```
 
 ## Priority rule for agents
 
-If asked to “improve the project” without a module specified: finish the earliest incomplete module’s **done criteria** before adding stretch features (6-way labels, ViT, live deploy, etc.).
+If asked to “improve the project” without a module specified: prefer demo polish, README clarity, or bugfixes over stretch features (6-way labels, ViT, live deploy, VLM API) unless explicitly requested.

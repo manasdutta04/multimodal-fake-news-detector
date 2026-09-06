@@ -59,7 +59,8 @@ class FakeNewsPipeline:
             raise FileNotFoundError(
                 "Missing checkpoint(s):\n"
                 + "\n".join(f"  - {p}" for p in missing)
-                + "\nPoint CHECKPOINTS_DIR at the Drive `checkpoints/` folder from Modules 01–03."
+                + "\nPoint CHECKPOINTS_DIR at `dataset/checkpoints` "
+                "(module01_distilbert, module02_resnet50, module03_fusion)."
             )
 
     def _load_models(self) -> None:
@@ -337,13 +338,13 @@ class FakeNewsPipeline:
 
 
 def default_checkpoints_dir() -> Path:
+    """Resolve checkpoints folder. Prefer `dataset/checkpoints` (Drive / teammate layout)."""
     env = os.environ.get("CHECKPOINTS_DIR")
     if env:
         return Path(env)
-    # Common local / Colab layouts
     candidates = [
+        Path("dataset/checkpoints"),  # Colab Drive + teammate local layout
         Path("checkpoints"),
-        Path("dataset/checkpoints"),
         Path("/content/drive/MyDrive/dataset/checkpoints"),
     ]
     for c in candidates:

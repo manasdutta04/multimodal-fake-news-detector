@@ -72,30 +72,48 @@ pip install -r requirements.txt
 
 ### 2. Point at checkpoints
 
-Download/copy from Google Drive the folder:
+Weights live under **`dataset/checkpoints/`** (same as Google Drive / teammate PC):
 
 ```text
-checkpoints/
-  module01_distilbert/          # HF save from Module 01
-  module02_resnet50/model.pt    # Module 02
-  module03_fusion/fusion.pt     # Module 03
+dataset/
+  multimodal_train.tsv
+  multimodal_validate.tsv
+  multimodal_test_public.tsv
+  image_cache/                    # optional for demo
+  checkpoints/
+    module01_distilbert/
+    module02_resnet50/model.pt
+    module03_fusion/fusion.pt
 ```
 
-Then:
+Validate from repo root:
 
-```bash
-# Windows PowerShell
-$env:CHECKPOINTS_DIR="C:\path\to\checkpoints"
+```powershell
+python scripts/check_checkpoints.py
+# or explicitly:
+python scripts/check_checkpoints.py --dir dataset\checkpoints
+```
+
+### 3. Run the app
+
+```powershell
+# If dataset\checkpoints exists, this finds it automatically:
+.\scripts\run_demo.ps1
+
+# Or:
+$env:CHECKPOINTS_DIR="dataset\checkpoints"
 streamlit run app/streamlit_app.py
 ```
 
-Or paste the path in the Streamlit sidebar.
+Sidebar also defaults to `dataset/checkpoints` when that folder exists.
 
-### 3. Use the app
+### 4. Use the app
 
 - Paste a headline and/or upload an image → **Predict**
-- Text-only / image-only inputs are supported (no crash)
-- Output: label, confidence, agreement (if both), explanation line, token highlights, Grad-CAM overlay
+- Text-only / image-only inputs are supported
+- Output: label, confidence, agreement (if both), explanation, token highlights, Grad-CAM
+
+See [artifacts/RESULTS.md](artifacts/RESULTS.md) for the full metrics tables.
 
 ## Training notebooks (Colab)
 

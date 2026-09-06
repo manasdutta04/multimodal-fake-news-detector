@@ -17,5 +17,7 @@ artifacts/**/*.bin
 __pycache__/
 *.py[cod]
 .ipynb_checkpoints/
-.venv/
-venv/
+.env
+.env.*
+!.env.example
+
