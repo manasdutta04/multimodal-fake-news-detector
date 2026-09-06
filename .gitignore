@@ -1,1 +1,17 @@
 dataset/
+
+# Large local / Drive mirrors — do not commit
+**/image_cache/
+**/checkpoints/**/model.pt
+**/checkpoints/**/model.safetensors
+**/checkpoints/**/*.bin
+artifacts/**/*.pt
+artifacts/**/*.safetensors
+artifacts/**/*.bin
+
+# Python
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
