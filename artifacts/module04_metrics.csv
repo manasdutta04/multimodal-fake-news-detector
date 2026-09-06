@@ -1,0 +1,9 @@
+model,split,faithfulness_mean_conf_drop,faithfulness_protocol,n_examples,setting,accuracy,f1_macro,delta_acc_vs_both
+TF-IDF+LogReg (SHAP deletion),eval_subset,0.258821765739767,delete_top5_shap_tokens,80.0,,,,
+ResNet50 (Grad-CAM deletion),eval_subset,0.17647110556717963,blank_top20pct_cam,80.0,,,,
+Late fusion,,,,,text+image,0.8713826366559485,0.8700918964076858,
+Late fusion,,,,,text-only (image=0),0.8488745980707395,0.8486492643175911,-0.022508038585209
+Late fusion,,,,,image-only (text=0),0.7684887459807074,0.7585820251854407,-0.10289389067524113
+Cross-attn fusion,,,,,text+image,0.887459807073955,0.88708154818096,
+Cross-attn fusion,,,,,text-only (image=0),0.8585209003215434,0.8584491890102615,-0.02893890675241162
+Cross-attn fusion,,,,,image-only (text=0),0.7459807073954984,0.7449258209528555,-0.14147909967845662
