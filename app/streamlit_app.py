@@ -2,7 +2,7 @@
 
 Run from repo root:
   set CHECKPOINTS_DIR=path/to/checkpoints
-  streamlit run app/streamlit_app.py
+    python -m streamlit run app/streamlit_app.py
 """
 from __future__ import annotations
 

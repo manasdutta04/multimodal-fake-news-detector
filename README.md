@@ -102,7 +102,7 @@ python scripts/check_checkpoints.py --dir dataset\checkpoints
 
 # Or:
 $env:CHECKPOINTS_DIR="dataset\checkpoints"
-streamlit run app/streamlit_app.py
+python -m streamlit run app/streamlit_app.py
 ```
 
 Sidebar also defaults to `dataset/checkpoints` when that folder exists.

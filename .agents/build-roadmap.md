@@ -47,7 +47,7 @@ Build in order. Each module depends on the previous.
 ```powershell
 # Teammate layout: dataset\checkpoints\
 python scripts/check_checkpoints.py
-streamlit run app/streamlit_app.py
+python -m streamlit run app/streamlit_app.py
 ```
 
 ## Priority rule for agents

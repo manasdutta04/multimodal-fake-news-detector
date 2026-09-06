@@ -25,4 +25,4 @@ Write-Host "CHECKPOINTS_DIR=$env:CHECKPOINTS_DIR"
 python scripts/check_checkpoints.py --dir $env:CHECKPOINTS_DIR
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-streamlit run app/streamlit_app.py
+python -m streamlit run app/streamlit_app.py

@@ -61,7 +61,7 @@ def main() -> int:
 
     if ok:
         print("\nAll required checkpoints found. You can run:")
-        print("  streamlit run app/streamlit_app.py")
+        print("  python -m streamlit run app/streamlit_app.py")
         return 0
 
     print("\nIncomplete checkpoints — demo will not load until the MISS lines are fixed.")
