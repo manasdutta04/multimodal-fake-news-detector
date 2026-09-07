@@ -1,29 +1,37 @@
-"""Batch-test the demo pipeline against Fakeddit TSV + image_cache.
+"""Batch-test the demo pipeline against Fakeddit TSV (+ optional image download).
 
 Runs text-only, image-only, and multimodal on N labeled rows and reports:
   - accuracy vs 2_way_label (0=fake, 1=real)
   - per-sample errors (so intermittent crashes are visible)
 
-Usage (from repo root, on the machine that has dataset/):
+Usage (from repo root):
 
-  python scripts/batch_eval_from_tsv.py
-  python scripts/batch_eval_from_tsv.py --n 50 --split test
-  python scripts/batch_eval_from_tsv.py --checkpoints dataset/checkpoints --n 30
+  # Text-only (works with just TSVs + text checkpoint)
+  python scripts/batch_eval_from_tsv.py --modes text --n 40
+
+  # Full multimodal — download a small image sample if image_cache is missing
+  python scripts/batch_eval_from_tsv.py --n 40 --download
+
+  # If you already have dataset/image_cache from Module 02 / Colab Drive:
+  python scripts/batch_eval_from_tsv.py --n 40 --split test
 
 Needs:
   dataset/multimodal_*.tsv
-  dataset/image_cache/{id}.jpg   (from Module 02)
-  dataset/checkpoints/module01_distilbert, module02_resnet50, module03_fusion
+  dataset/checkpoints/...
+  For image/multimodal: dataset/image_cache/{id}.jpg  OR pass --download
 """
 from __future__ import annotations
 
 import argparse
+import io
 import os
 import sys
 import traceback
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import pandas as pd
+import requests
 from PIL import Image
 from tqdm.auto import tqdm
 
@@ -34,24 +42,61 @@ if str(ROOT) not in sys.path:
 from app.inference_pipeline import FakeNewsPipeline, default_checkpoints_dir
 from app.preprocessing import LABEL_NAMES
 
+USER_AGENT = (
+    "Mozilla/5.0 (compatible; MultimodalFakeNewsDetector/0.1; "
+    "+https://github.com/manasdutta04/multimodal-fake-news-detector)"
+)
+REQUEST_TIMEOUT = 12
+MIN_SIDE_PX = 32
+
 
 def cache_path(image_cache: Path, sample_id: str) -> Path:
     return image_cache / f"{str(sample_id).replace('/', '_')}.jpg"
 
 
-def load_paired(tsv: Path, image_cache: Path, n: int, seed: int) -> pd.DataFrame:
-    df = pd.read_csv(tsv, sep="\t", low_memory=False)
-    df["id"] = df["id"].astype(str)
-    df["image_path"] = df["id"].map(lambda i: str(cache_path(image_cache, i)))
-    df = df[df["image_path"].map(lambda p: Path(p).exists())].copy()
-    df = df[df["clean_title"].notna() & (df["clean_title"].astype(str).str.strip() != "")]
-    df = df[df["2_way_label"].isin([0, 1])]
-    if len(df) == 0:
-        raise SystemExit(
-            f"No rows with both title and cached image under {image_cache}.\n"
-            "Run Module 02 download first, or lower --n after confirming image_cache has files."
+def is_valid_image_file(path: Path) -> bool:
+    try:
+        with Image.open(path) as im:
+            im.verify()
+        with Image.open(path) as im:
+            im = im.convert("RGB")
+            w, h = im.size
+            return w >= MIN_SIDE_PX and h >= MIN_SIDE_PX
+    except Exception:
+        return False
+
+
+def download_one(sample_id: str, url: str, image_cache: Path) -> tuple[str, bool, str]:
+    path = cache_path(image_cache, sample_id)
+    if path.exists() and is_valid_image_file(path):
+        return sample_id, True, "cached"
+    try:
+        resp = requests.get(
+            url,
+            timeout=REQUEST_TIMEOUT,
+            headers={"User-Agent": USER_AGENT},
+            stream=True,
         )
-    # stratified-ish sample
+        resp.raise_for_status()
+        data = resp.content
+        with Image.open(io.BytesIO(data)) as im:
+            im = im.convert("RGB")
+            w, h = im.size
+            if w < MIN_SIDE_PX or h < MIN_SIDE_PX:
+                return sample_id, False, "too_small"
+            image_cache.mkdir(parents=True, exist_ok=True)
+            im.save(path, format="JPEG", quality=90)
+        if not is_valid_image_file(path):
+            path.unlink(missing_ok=True)
+            return sample_id, False, "invalid_after_save"
+        return sample_id, True, "downloaded"
+    except Exception as e:
+        if path.exists():
+            path.unlink(missing_ok=True)
+        return sample_id, False, repr(e)
+
+
+def stratified_sample(df: pd.DataFrame, n: int, seed: int) -> pd.DataFrame:
     parts = []
     per = max(1, n // 2)
     for _, g in df.groupby("2_way_label"):
@@ -60,6 +105,94 @@ def load_paired(tsv: Path, image_cache: Path, n: int, seed: int) -> pd.DataFrame
     if len(out) > n:
         out = out.sample(n=n, random_state=seed)
     return out.sample(frac=1.0, random_state=seed).reset_index(drop=True)
+
+
+def load_text_rows(tsv: Path, n: int, seed: int) -> pd.DataFrame:
+    df = pd.read_csv(tsv, sep="\t", low_memory=False)
+    df["id"] = df["id"].astype(str)
+    df = df[df["clean_title"].notna() & (df["clean_title"].astype(str).str.strip() != "")]
+    df = df[df["2_way_label"].isin([0, 1])].copy()
+    if len(df) == 0:
+        raise SystemExit(f"No usable text rows in {tsv}")
+    out = stratified_sample(df, n=n, seed=seed)
+    out["image_path"] = None
+    return out
+
+
+def load_paired(
+    tsv: Path,
+    image_cache: Path,
+    n: int,
+    seed: int,
+    download: bool,
+    download_workers: int,
+    download_pool: int,
+) -> pd.DataFrame:
+    df = pd.read_csv(tsv, sep="\t", low_memory=False)
+    df["id"] = df["id"].astype(str)
+    df = df[df["clean_title"].notna() & (df["clean_title"].astype(str).str.strip() != "")]
+    df = df[df["2_way_label"].isin([0, 1])].copy()
+    df["image_path"] = df["id"].map(lambda i: str(cache_path(image_cache, i)))
+
+    cached = df[df["image_path"].map(lambda p: Path(p).exists())].copy()
+    if len(cached) >= n:
+        return stratified_sample(cached, n=n, seed=seed)
+
+    if not download:
+        raise SystemExit(
+            f"image_cache has {len(cached)} usable files under {image_cache} "
+            f"(need ~{n}).\n\n"
+            "Fix one of these:\n"
+            "  1) Copy image_cache from Colab/Drive (Module 02 output) into dataset/image_cache\n"
+            "  2) Download a small sample now:\n"
+            "       python scripts/batch_eval_from_tsv.py --n 40 --download\n"
+            "  3) Text-only smoke test (no images):\n"
+            "       python scripts/batch_eval_from_tsv.py --modes text --n 40\n"
+        )
+
+    # Prefer rows with http(s) image_url; try more than n because many URLs fail
+    urls = df.copy()
+    if "image_url" not in urls.columns:
+        raise SystemExit("TSV has no image_url column — cannot --download")
+    urls["image_url"] = urls["image_url"].astype(str).str.strip()
+    urls = urls[
+        urls["image_url"].str.startswith(("http://", "https://"))
+        & (urls["image_url"].str.lower() != "nan")
+    ]
+    # already-cached first, then candidates to download
+    need = max(n * 4, download_pool)  # oversample; many Reddit/Imgur links die
+    candidates = stratified_sample(urls, n=min(len(urls), need), seed=seed)
+
+    to_fetch = [
+        (row["id"], row["image_url"])
+        for _, row in candidates.iterrows()
+        if not Path(row["image_path"]).exists()
+    ]
+    print(f"Downloading up to {len(to_fetch)} images into {image_cache} …")
+    image_cache.mkdir(parents=True, exist_ok=True)
+    ok = fail = 0
+    with ThreadPoolExecutor(max_workers=download_workers) as ex:
+        futs = [ex.submit(download_one, sid, url, image_cache) for sid, url in to_fetch]
+        for fut in tqdm(as_completed(futs), total=len(futs), desc="download"):
+            _, success, _ = fut.result()
+            if success:
+                ok += 1
+            else:
+                fail += 1
+    print(f"download done: ok={ok} fail={fail}")
+
+    df["image_path"] = df["id"].map(lambda i: str(cache_path(image_cache, i)))
+    cached = df[df["image_path"].map(lambda p: Path(p).exists() and is_valid_image_file(Path(p)))].copy()
+    if len(cached) == 0:
+        raise SystemExit(
+            "Download finished but no valid images were saved.\n"
+            "Many Fakeddit image_url links are dead. Copy image_cache from the "
+            "Colab/Drive machine that ran Module 02, or use --modes text."
+        )
+    if len(cached) < n:
+        print(f"Warning: only {len(cached)} images available; evaluating that many.")
+        n = len(cached)
+    return stratified_sample(cached, n=n, seed=seed)
 
 
 def main() -> int:
@@ -71,12 +204,24 @@ def main() -> int:
         help="Checkpoints dir (default: CHECKPOINTS_DIR or dataset/checkpoints)",
     )
     parser.add_argument("--split", choices=["test", "validate", "train"], default="test")
-    parser.add_argument("--n", type=int, default=40, help="Number of paired samples")
+    parser.add_argument("--n", type=int, default=40, help="Number of samples")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--modes",
         default="text,image,multimodal",
         help="Comma list: text,image,multimodal",
+    )
+    parser.add_argument(
+        "--download",
+        action="store_true",
+        help="If image_cache is missing/sparse, download images from TSV image_url",
+    )
+    parser.add_argument("--download-workers", type=int, default=8)
+    parser.add_argument(
+        "--download-pool",
+        type=int,
+        default=200,
+        help="How many URL candidates to try when --download (many fail)",
     )
     args = parser.parse_args()
 
@@ -100,14 +245,33 @@ def main() -> int:
     if not ckpt.exists():
         raise SystemExit(f"Missing checkpoints: {ckpt}")
 
-    df = load_paired(tsv, image_cache, n=args.n, seed=args.seed)
-    print(f"Evaluating {len(df)} paired rows  "
-          f"(fake={(df['2_way_label']==0).sum()}, real={(df['2_way_label']==1).sum()})")
+    modes = [m.strip() for m in args.modes.split(",") if m.strip()]
+    needs_images = any(m in ("image", "multimodal") for m in modes)
+
+    if needs_images:
+        df = load_paired(
+            tsv,
+            image_cache,
+            n=args.n,
+            seed=args.seed,
+            download=args.download,
+            download_workers=args.download_workers,
+            download_pool=args.download_pool,
+        )
+        print(
+            f"Evaluating {len(df)} paired rows  "
+            f"(fake={(df['2_way_label']==0).sum()}, real={(df['2_way_label']==1).sum()})"
+        )
+    else:
+        df = load_text_rows(tsv, n=args.n, seed=args.seed)
+        print(
+            f"Evaluating {len(df)} text rows  "
+            f"(fake={(df['2_way_label']==0).sum()}, real={(df['2_way_label']==1).sum()})"
+        )
 
     print("Loading models…")
     pipe = FakeNewsPipeline(ckpt)
 
-    modes = [m.strip() for m in args.modes.split(",") if m.strip()]
     stats = {
         m: {"ok": 0, "err": 0, "correct": 0, "total": 0, "errors": []}
         for m in modes
@@ -117,7 +281,7 @@ def main() -> int:
         title = str(row["clean_title"])
         y = int(row["2_way_label"])
         true_label = LABEL_NAMES[y]
-        img_path = row["image_path"]
+        img_path = row.get("image_path")
 
         for mode in modes:
             stats[mode]["total"] += 1

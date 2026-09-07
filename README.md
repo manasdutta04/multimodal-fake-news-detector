@@ -115,13 +115,16 @@ Sidebar also defaults to `dataset/checkpoints` when that folder exists.
 
 ### 5. Batch-test from the TSV (recommended)
 
-On the machine that has `dataset/` (TSVs + `image_cache/` + checkpoints):
-
 ```powershell
-python scripts/batch_eval_from_tsv.py --n 40 --split test
+# Text-only (no image_cache needed)
+python scripts/batch_eval_from_tsv.py --modes text --n 40
+
+# Full test — downloads a small image sample if dataset/image_cache is missing
+python scripts/batch_eval_from_tsv.py --n 40 --download
 ```
 
-This runs **text / image / multimodal** on paired Fakeddit rows and prints accuracy + any crashes. Use this instead of random clickbait headlines for “does it work?” checks.
+If you already copied `image_cache` from Colab/Drive (Module 02), omit `--download`.
+The script prints accuracy vs Fakeddit labels + any crashes. Prefer this over random clickbait headlines.
 
 See [artifacts/RESULTS.md](artifacts/RESULTS.md) for the full metrics tables.
 
