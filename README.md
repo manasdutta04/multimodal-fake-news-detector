@@ -113,6 +113,16 @@ Sidebar also defaults to `dataset/checkpoints` when that folder exists.
 - Text-only / image-only inputs are supported
 - Output: label, confidence, agreement (if both), explanation, token highlights, Grad-CAM
 
+### 5. Batch-test from the TSV (recommended)
+
+On the machine that has `dataset/` (TSVs + `image_cache/` + checkpoints):
+
+```powershell
+python scripts/batch_eval_from_tsv.py --n 40 --split test
+```
+
+This runs **text / image / multimodal** on paired Fakeddit rows and prints accuracy + any crashes. Use this instead of random clickbait headlines for “does it work?” checks.
+
 See [artifacts/RESULTS.md](artifacts/RESULTS.md) for the full metrics tables.
 
 ## Training notebooks (Colab)
