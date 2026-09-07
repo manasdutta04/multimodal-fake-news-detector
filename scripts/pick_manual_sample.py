@@ -1,8 +1,8 @@
-"""Print 1 FAKE + 1 REAL sample that has a cached image (for manual Streamlit tests).
+"""Print 1 random FAKE + 1 random REAL sample with a cached image (Streamlit manual tests).
 
 Usage (from repo root):
   python scripts/pick_manual_sample.py
-  python scripts/pick_manual_sample.py --split test --index 0
+  python scripts/pick_manual_sample.py --seed 42   # same pair again
 """
 from __future__ import annotations
 
@@ -16,7 +16,12 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--dataset-dir", default="dataset")
     parser.add_argument("--split", choices=["test", "validate", "train"], default="test")
-    parser.add_argument("--index", type=int, default=0, help="Which cached row per label (0, 1, 2, …)")
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Optional RNG seed for a repeatable pair; omit for a new random pair each run",
+    )
     args = parser.parse_args()
 
     dataset = Path(args.dataset_dir)
@@ -45,8 +50,7 @@ def main() -> None:
         if len(sub) == 0:
             print(f"No cached rows for {name}")
             continue
-        i = min(args.index, len(sub) - 1)
-        r = sub.iloc[i]
+        r = sub.sample(n=1, random_state=args.seed).iloc[0]
         print("=" * 60)
         print(f"TRUE LABEL: {name}  (2_way_label={lab})")
         print(f"id:    {r['id']}")
